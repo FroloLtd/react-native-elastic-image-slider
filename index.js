@@ -11,37 +11,30 @@ import {
     Platform
 } from 'react-native';
 const PropTypes = require('prop-types');
-
 import styles from './style';
-
 // changing component to work with views - custom - SG
 class ImageSlider extends Component {
     constructor(props) {
         super(props);
-
         this.state = {
             position: this.props.initialPosition,
             height: new Animated.Value(this._scaleHeight(this.props.views[this.props.initialPosition])),
             left: new Animated.Value(0),
             scrolling: false,
-            timeout: null
+            timeout: null,
         };
-
         // Enable LayoutAnimation under Android
         if (Platform.OS === 'android') {
             UIManager.setLayoutAnimationEnabledExperimental(true)
         }
-
     }
-
     static defaultProps = {
         position: 0,
         autoPlay: false,
         autoPlayDuration: 4000,
-        initialPosition: 0
+        initialPosition: 0,
+        newHeight:180
     };
-
-
     _move(index) {
         const width = Dimensions.get('window').width;
         const to = index * -width;
@@ -57,7 +50,6 @@ class ImageSlider extends Component {
             velocity: 1,
             duration: 400
         }).start();
-
         if (this.state.timeout) {
             clearTimeout(this.state.timeout);
         }
@@ -71,18 +63,16 @@ class ImageSlider extends Component {
             }, 400)
         });
     }
-
    _getPosition() {
         if (typeof this.props.position === 'number') {
             //return this.props.position;
         }
         return this.state.position;
     }
+
+    // height of the component
     _scaleHeight(image) {
-        return 180
-        const imageWidth = image.width;
-        const imageHeight = image.height;
-        return Dimensions.get('window').width * imageHeight / imageWidth;
+        return this.props.newHeight       
     }
 
     componentWillReceiveProps(props) {
@@ -91,22 +81,17 @@ class ImageSlider extends Component {
             this._move(props.position);
         }
     }
-
     componentWillMount() {
         const width = Dimensions.get('window').width;
-
         this.state.left.setValue(-(width * this.state.position));
-
         if (typeof this.props.position === 'number') {
             //this.state.left.setValue(-(width * this.props.position));
         }
-
         let release = (e, gestureState) => {
             const width = Dimensions.get('window').width;
             const relativeDistance = gestureState.dx / width;
             const vx = gestureState.vx;
             let change = 0;
-
             if (relativeDistance < -0.5 || (relativeDistance < 0 && vx <= 0.5)) {
                 change = 1;
             } else if (relativeDistance > 0.5 || (relativeDistance > 0 && vx >= 0.5)) {
@@ -122,7 +107,6 @@ class ImageSlider extends Component {
             this.moveToNextPage() // auto play setup
             return true;
         };
-
         this._panResponder = PanResponder.create({
             onMoveShouldSetPanResponderCapture: (evt, gestureState) => Math.abs(gestureState.dx) > 5,
             onPanResponderRelease: release,
@@ -142,12 +126,9 @@ class ImageSlider extends Component {
                 if (!this.state.scrolling) {
                     this.setState({scrolling: true});
                 }
-
                 this.clearAutoPlay()
-
                 //scale
                 let change = 0;
-
                 if (dx >= 0) {
                     change = -1;
                 } else if (dx < 0) {
@@ -170,46 +151,37 @@ class ImageSlider extends Component {
             },
             onShouldBlockNativeResponder: () => true
         });
-
     }
-
     componentDidMount() {
         if(this.props.autoPlay) {
            this.moveToNextPage()
         }
     }
-
     clearAutoPlay() {
         if (this.state.autoPlayTimeOut) {
             clearTimeout(this.state.autoPlayTimeOut);
         }
     }
-
     // recursive
     moveToNextPage() {
         if (!(this.props.autoPlay && this.state.position < this.props.views.length - 1)) {
             // reached end or not autoplaying
             return
         }
-
        const autoPlayTimeOut = setTimeout(() => {
          this.setState({scrolling: true});
          this._move(this.state.position + 1);
-         
          if ((this.props.autoPlay && this.state.position < this.props.views.length - 1)) {
               this.moveToNextPage()    
          }
-       
        }, this.props.autoPlayDuration)
        this.setState({autoPlayTimeOut})
     }
-
     componentWillUnmount() {
         if (this.state.timeout) {
             clearTimeout(this.state.timeout);
         }
     }
-
     componentWillUpdate() {
         const CustomLayoutAnimation = {
             duration: 100,
@@ -224,7 +196,6 @@ class ImageSlider extends Component {
         LayoutAnimation.configureNext(CustomLayoutAnimation);
         //LayoutAnimation.linear();
     }
-
     render() {
         const customStyles = this.props.style ? this.props.style : {};
         const width = Dimensions.get('window').width;
@@ -234,9 +205,7 @@ class ImageSlider extends Component {
                 style={[styles.container, customStyles, {height: this.state.height, width: width * this.props.views.length, transform: [{translateX: this.state.left}]}]}
                 {...this._panResponder.panHandlers}>
                 {this.props.views.map((view, index) => {
-                
                     let component = view
-                   
                     if (this.props.onPress) {
                         return (
                             <TouchableOpacity
@@ -254,17 +223,12 @@ class ImageSlider extends Component {
                     }
                 })}
             </Animated.View>
-          
-
         </View>);
     }
 }
-
 ImageSlider.propTypes = {
   onPositionChanged: PropTypes.func,
   autoPlay: PropTypes.bool,
   autoPlayDuration: PropTypes.number
 };
-
-
 export default ImageSlider;
